@@ -1,0 +1,41 @@
+name: kaggle
+channels:
+- menpo
+- defaults
+dependencies:
+- certifi=2017.11.5=py35h456c6ae_0
+- icc_rt=2017.0.4=h97af966_0
+- intel-openmp=2018.0.0=hd92c6cd_8
+- mkl=2018.0.1=h2108138_4
+- numpy=1.13.3=py35hb7e80fb_0
+- pip=9.0.1=py35h691316f_4
+- python=3.5.4=h1357f44_23
+- setuptools=36.5.0=py35h21a22e4_0
+- vc=14=h2379b0c_2
+- vs2015_runtime=14.0.25123=hd4c4e62_2
+- wheel=0.30.0=py35h38a90bc_1
+- wincertstore=0.2=py35hfebbdb8_0
+- opencv3=3.1.0=py35_0
+- pip:
+  - beautifulsoup4==4.6.0
+  - cycler==0.10.0
+  - decorator==4.1.2
+  - lxml==4.1.1
+  - matplotlib==2.1.0
+  - networkx==2.0
+  - olefile==0.44
+  - pandas==0.21.0
+  - pillow==4.3.0
+  - pydicom==0.9.9
+  - pyparsing==2.2.0
+  - python-dateutil==2.6.1
+  - pytz==2017.3
+  - pywavelets==0.5.2
+  - scikit-image==0.13.1
+  - scikit-learn==0.19.1
+  - scipy==1.0.0
+  - simpleitk==1.0.1
+  - six==1.11.0
+  - xgboost==0.6+20171121
+prefix: E:\Programs\Miniconda3\envs\kaggle
+

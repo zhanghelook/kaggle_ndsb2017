@@ -1,0 +1,10 @@
+pydicom
+scipy
+scikit-image
+scikit-learn
+pandas
+SimpleITK
+beautifulsoup4
+lxml
+# xgboost can't be installed from pip on Windows. Install it directly from lib/
+#xgboost
