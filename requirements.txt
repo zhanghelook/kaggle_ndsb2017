@@ -6,5 +6,7 @@ pandas
 SimpleITK
 beautifulsoup4
 lxml
+keras
+tensorflow
 # xgboost can't be installed from pip on Windows. Install it directly from lib/
 #xgboost
