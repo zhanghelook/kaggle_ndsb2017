@@ -1,6 +1,14 @@
 resources/*
 !resources/readme.md
 
+# Data
+lidc_annotations.csv
+luna_raw/
+ndsb_raw/
+luna16_extracted_images/
+ndsb3_extracted_images/
+ndsb3_nodule_predictions/
+
 # Created by .ignore support plugin (hsz.mobi)
 ### JetBrains template
 # Covers JetBrains IDEs: IntelliJ, RubyMine, PhpStorm, AppCode, PyCharm, CLion, Android Studio and Webstorm
