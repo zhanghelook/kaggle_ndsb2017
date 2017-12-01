@@ -57,6 +57,9 @@ def cv_flip(img, cols, rows, degree):
 
 
 def extract_dicom_images_patient(src_dir):
+    """
+    """
+
     target_dir = settings.NDSB3_EXTRACTED_IMAGE_DIR
     print("Dir: ", src_dir)
     dir_path = settings.NDSB3_RAW_SRC_DIR + src_dir + "/"

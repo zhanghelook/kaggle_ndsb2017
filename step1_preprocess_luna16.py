@@ -115,6 +115,8 @@ def load_lidc_xml(xml_path, agreement_threshold=0, only_patient=None, save_nodul
             lobulation = nodule.characteristics.lobulation.text
             subtlety = nodule.characteristics.subtlety.text
 
+            # *_annos_pos.csvの中身
+            # anno_index, coord_x, coord_y, coord_z, diameter, malscore
             line = [nodule_id, x_center_perc, y_center_perc, z_center_perc, diameter_perc, malignacy]
             extended_line = [patient_id, nodule_id, x_center_perc, y_center_perc, z_center_perc, diameter_perc,
                              malignacy, sphericiy, margin, spiculation, texture, calcification, internal_structure,
@@ -164,9 +166,11 @@ def load_lidc_xml(xml_path, agreement_threshold=0, only_patient=None, save_nodul
                 #     print("Too few overlaps")
         pos_lines = filtered_lines
 
+    # pos_lines 結節であるデータ
     df_annos = pandas.DataFrame(pos_lines,
                                 columns=["anno_index", "coord_x", "coord_y", "coord_z", "diameter", "malscore"])
     df_annos.to_csv(settings.LUNA16_EXTRACTED_IMAGE_DIR + "_labels/" + patient_id + "_annos_pos_lidc.csv", index=False)
+    # neg_lines 結節ではないデータ
     df_neg_annos = pandas.DataFrame(neg_lines,
                                     columns=["anno_index", "coord_x", "coord_y", "coord_z", "diameter", "malscore"])
     df_neg_annos.to_csv(settings.LUNA16_EXTRACTED_IMAGE_DIR + "_labels/" + patient_id + "_annos_neg_lidc.csv",

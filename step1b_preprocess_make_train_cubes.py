@@ -71,7 +71,8 @@ def make_pos_annotation_images():
             if cube_img.mean() < 10:
                 print(" ***** Suspicious ", coord_x, coord_y, coord_z)
 
-            save_cube_img(dst_dir + patient_id + "_" + str(anno_index) + "_" + str(diam_mm) + "_1_" + "pos.png", cube_img, 8, 8)
+            save_cube_img(dst_dir + patient_id + "_" + str(anno_index) + "_" + str(diam_mm) + "_1_" + "pos.png",
+                          cube_img, 8, 8)
         helpers.print_tabbed([patient_index, patient_id, len(df_annos)], [5, 64, 8])
 
 
@@ -85,20 +86,26 @@ def make_annotation_images_lidc():
     for file_path in glob.glob(dst_dir + "*.*"):
         os.remove(file_path)
 
+    # 結節の座標などを示すCSVを読み込む
     for patient_index, csv_file in enumerate(glob.glob(src_dir + "*_annos_pos_lidc.csv")):
         patient_id = ntpath.basename(csv_file).replace("_annos_pos_lidc.csv", "")
         df_annos = pandas.read_csv(csv_file)
         if len(df_annos) == 0:
             continue
-        images = helpers.load_patient_images(patient_id, settings.LUNA16_EXTRACTED_IMAGE_DIR, "*" + CUBE_IMGTYPE_SRC + ".png")
+        # 患者のCT画像を読み込む
+        images = helpers.load_patient_images(patient_id, settings.LUNA16_EXTRACTED_IMAGE_DIR,
+                                             "*" + CUBE_IMGTYPE_SRC + ".png")
 
         for index, row in df_annos.iterrows():
+            # 座標
             coord_x = int(row["coord_x"] * images.shape[2])
             coord_y = int(row["coord_y"] * images.shape[1])
             coord_z = int(row["coord_z"] * images.shape[0])
+            # 悪性腫瘍スコア
             malscore = int(row["malscore"])
             anno_index = row["anno_index"]
             anno_index = str(anno_index).replace(" ", "xspacex").replace(".", "xpointx").replace("_", "xunderscorex")
+            # 画像リストから64x64x64のキューブを作るう
             cube_img = get_cube_from_img(images, coord_x, coord_y, coord_z, 64)
             if cube_img.sum() < 5:
                 print(" ***** Skipping ", coord_x, coord_y, coord_z)
@@ -108,10 +115,12 @@ def make_annotation_images_lidc():
                 print(" ***** Suspicious ", coord_x, coord_y, coord_z)
 
             if cube_img.shape != (64, 64, 64):
-                print(" ***** incorrect shape !!! ", str(anno_index), " - ",(coord_x, coord_y, coord_z))
+                print(" ***** incorrect shape !!! ", str(anno_index), " - ", (coord_x, coord_y, coord_z))
                 continue
 
-            save_cube_img(dst_dir + patient_id + "_" + str(anno_index) + "_" + str(malscore * malscore) + "_1_pos.png", cube_img, 8, 8)
+            # ファイル名: 患者ID_注釈index_悪性腫瘍スコア^2_1_post.png
+            save_cube_img(dst_dir + patient_id + "_" + str(anno_index) + "_" + str(malscore * malscore) + "_1_pos.png",
+                          cube_img, 8, 8)
         helpers.print_tabbed([patient_index, patient_id, len(df_annos)], [5, 64, 8])
 
 
@@ -136,7 +145,8 @@ def make_pos_annotation_images_manual():
         df_annos = pandas.read_csv(csv_file)
         if len(df_annos) == 0:
             continue
-        images = helpers.load_patient_images(patient_id, settings.LUNA16_EXTRACTED_IMAGE_DIR, "*" + CUBE_IMGTYPE_SRC + ".png")
+        images = helpers.load_patient_images(patient_id, settings.LUNA16_EXTRACTED_IMAGE_DIR,
+                                             "*" + CUBE_IMGTYPE_SRC + ".png")
 
         for index, row in df_annos.iterrows():
             coord_x = int(row["x"] * images.shape[2])
@@ -157,10 +167,11 @@ def make_pos_annotation_images_manual():
                 print(" ***** Suspicious ", coord_x, coord_y, coord_z)
 
             if cube_img.shape != (64, 64, 64):
-                print(" ***** incorrect shape !!! ", str(anno_index), " - ",(coord_x, coord_y, coord_z))
+                print(" ***** incorrect shape !!! ", str(anno_index), " - ", (coord_x, coord_y, coord_z))
                 continue
 
-            save_cube_img(dst_dir + patient_id + "_" + str(anno_index) + "_" + str(malscore) + "_1_" + ("pos" if node_type == 0 else "neg") + ".png", cube_img, 8, 8)
+            save_cube_img(dst_dir + patient_id + "_" + str(anno_index) + "_" + str(malscore) + "_1_" + (
+                "pos" if node_type == 0 else "neg") + ".png", cube_img, 8, 8)
         helpers.print_tabbed([patient_index, patient_id, len(df_annos)], [5, 64, 8])
 
 
@@ -187,7 +198,8 @@ def make_candidate_auto_images(candidate_types=[]):
             df_annos = pandas.read_csv(csv_file)
             if len(df_annos) == 0:
                 continue
-            images = helpers.load_patient_images(patient_id, settings.LUNA16_EXTRACTED_IMAGE_DIR, "*" + CUBE_IMGTYPE_SRC + ".png", exclude_wildcards=[])
+            images = helpers.load_patient_images(patient_id, settings.LUNA16_EXTRACTED_IMAGE_DIR,
+                                                 "*" + CUBE_IMGTYPE_SRC + ".png", exclude_wildcards=[])
 
             row_no = 0
             for index, row in df_annos.iterrows():
@@ -201,7 +213,8 @@ def make_candidate_auto_images(candidate_types=[]):
                     continue
                 # print(cube_img.sum())
                 try:
-                    save_cube_img(dst_dir + patient_id + "_" + str(anno_index) + "_0_" + candidate_type + ".png", cube_img, 6, 8)
+                    save_cube_img(dst_dir + patient_id + "_" + str(anno_index) + "_0_" + candidate_type + ".png",
+                                  cube_img, 6, 8)
                 except Exception as ex:
                     print(ex)
 
@@ -219,7 +232,6 @@ def make_pos_annotation_images_manual_ndsb3():
     if not os.path.exists(dst_dir):
         os.mkdir(dst_dir)
 
-
     train_label_df = pandas.read_csv("resources/stage1_labels.csv")
     train_label_df.set_index(["id"], inplace=True)
     for file_path in glob.glob(dst_dir + "*.*"):
@@ -234,7 +246,8 @@ def make_pos_annotation_images_manual_ndsb3():
         df_annos = pandas.read_csv(csv_file)
         if len(df_annos) == 0:
             continue
-        images = helpers.load_patient_images(patient_id, settings.NDSB3_EXTRACTED_IMAGE_DIR, "*" + CUBE_IMGTYPE_SRC + ".png")
+        images = helpers.load_patient_images(patient_id, settings.NDSB3_EXTRACTED_IMAGE_DIR,
+                                             "*" + CUBE_IMGTYPE_SRC + ".png")
 
         anno_index = 0
         for index, row in df_annos.iterrows():
@@ -253,11 +266,12 @@ def make_pos_annotation_images_manual_ndsb3():
                 print(" ***** Suspicious ", coord_x, coord_y, coord_z)
 
             if cube_img.shape != (64, 64, 64):
-                print(" ***** incorrect shape !!! ", str(anno_index), " - ",(coord_x, coord_y, coord_z))
+                print(" ***** incorrect shape !!! ", str(anno_index), " - ", (coord_x, coord_y, coord_z))
                 continue
             print(patient_id)
             assert malscore > 0 or pos_neg == "neg"
-            save_cube_img(dst_dir + "ndsb3manual_" + patient_id + "_" + str(anno_index) + "_" + pos_neg + "_" + str(cancer_label) + "_" + str(malscore) + "_1_pn.png", cube_img, 8, 8)
+            save_cube_img(dst_dir + "ndsb3manual_" + patient_id + "_" + str(anno_index) + "_" + pos_neg + "_" + str(
+                cancer_label) + "_" + str(malscore) + "_1_pn.png", cube_img, 8, 8)
         helpers.print_tabbed([patient_index, patient_id, len(df_annos)], [5, 64, 8])
 
 
@@ -266,16 +280,21 @@ if __name__ == "__main__":
         os.mkdir(settings.BASE_DIR_SSD + "generated_traindata/")
 
     if True:
+        # 患者画像と結節の注釈データから64*64*64の3Dキューブ（PNGのスプライトシート）
+        # LIDCデータ
         make_annotation_images_lidc()
     if True:
+        # 患者画像と結節の注釈データから64*64*64の3Dキューブ（PNGのスプライトシート）
+        # 手動データ
         make_pos_annotation_images_manual()
     # if False:
     #     make_pos_annotation_images()  # not used anymore
     if True:
+        # 患者画像と結節の注釈データから48*48&48の3Dキューブ（PNGのスプライトシート）
+        # False Positiveデータ
+        # LUNAデータ
         make_candidate_auto_images(["falsepos", "luna", "edge"])
     if True:
+        # 患者画像と結節の注釈データから64*64*64の3Dキューブ（PNGのスプライトシート）
+        # NDSB3の手動注釈データ
         make_pos_annotation_images_manual_ndsb3()  # for second model
-
-
-
-

@@ -1,5 +1,6 @@
 resources/*
 !resources/readme.md
+trained_models.rar
 
 # Data
 lidc_annotations.csv

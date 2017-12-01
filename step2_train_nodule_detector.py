@@ -10,7 +10,8 @@ import cv2
 import numpy
 from typing import List, Tuple
 from keras.optimizers import Adam, SGD
-from keras.layers import Input, Convolution2D, MaxPooling2D, UpSampling2D, merge, Convolution3D, MaxPooling3D, UpSampling3D, LeakyReLU, BatchNormalization, Flatten, Dense, Dropout, ZeroPadding3D, AveragePooling3D, Activation
+from keras.layers import Input, Convolution2D, MaxPooling2D, UpSampling2D, merge, Convolution3D, MaxPooling3D, \
+    UpSampling3D, LeakyReLU, BatchNormalization, Flatten, Dense, Dropout, ZeroPadding3D, AveragePooling3D, Activation
 from keras.models import Model, load_model, model_from_json
 from keras.metrics import binary_accuracy, binary_crossentropy, mean_squared_error, mean_absolute_error
 from keras import backend as K
@@ -20,10 +21,10 @@ from scipy.ndimage.filters import gaussian_filter
 import math
 import shutil
 
-
 # limit memory usage..
 import tensorflow as tf
 from keras.backend.tensorflow_backend import set_session
+
 config = tf.ConfigProto()
 config.gpu_options.per_process_gpu_memory_fraction = 0.5
 set_session(tf.Session(config=config))
@@ -43,6 +44,7 @@ LEARN_RATE = 0.001
 
 USE_DROPOUT = False
 
+
 def prepare_image_for_net3D(img):
     img = img.astype(numpy.float32)
     img -= MEAN_PIXEL_VALUE
@@ -51,26 +53,34 @@ def prepare_image_for_net3D(img):
     return img
 
 
-def get_train_holdout_files(fold_count, train_percentage=80, logreg=True, ndsb3_holdout=0, manual_labels=True, full_luna_set=False):
+def get_train_holdout_files(fold_count, train_percentage=80, logreg=True, ndsb3_holdout=0, manual_labels=True,
+                            full_luna_set=False):
     print("Get train/holdout files.")
     # pos_samples = glob.glob(settings.BASE_DIR_SSD + "luna16_train_cubes_pos/*.png")
+    # LIDCのpositiveサンプル
     pos_samples = glob.glob(settings.BASE_DIR_SSD + "generated_traindata/luna16_train_cubes_lidc/*.png")
     print("Pos samples: ", len(pos_samples))
 
+    # LUNA16の手動positiveサンプル
     pos_samples_manual = glob.glob(settings.BASE_DIR_SSD + "generated_traindata/luna16_train_cubes_manual/*_pos.png")
     print("Pos samples manual: ", len(pos_samples_manual))
     pos_samples += pos_samples_manual
 
+    # シャッフル
     random.shuffle(pos_samples)
+    # positiveの学習数
     train_pos_count = int((len(pos_samples) * train_percentage) / 100)
+    # 学習サンプル
     pos_samples_train = pos_samples[:train_pos_count]
+    # 検証サンプル
     pos_samples_holdout = pos_samples[train_pos_count:]
     if full_luna_set:
         pos_samples_train += pos_samples_holdout
         if manual_labels:
+            # 手動データについては検証しない？
             pos_samples_holdout = []
 
-
+    # NDSB3の手動サンプル
     ndsb3_list = glob.glob(settings.BASE_DIR_SSD + "generated_traindata/ndsb3_train_cubes_manual/*.png")
     print("Ndsb3 samples: ", len(ndsb3_list))
 
@@ -91,7 +101,6 @@ def get_train_holdout_files(fold_count, train_percentage=80, logreg=True, ndsb3_
             if fold_count == 3:
                 if parts[3] == "neg":  # skip negative cases
                     continue
-
 
             patient_id = parts[1]
             patient_fold = helpers.get_patient_fold(patient_id) % fold_count
@@ -114,9 +123,9 @@ def get_train_holdout_files(fold_count, train_percentage=80, logreg=True, ndsb3_
     print(ndsb3_pos_holdout, " ndsb3 pos labels holdout")
     print(ndsb3_neg_holdout, " ndsb3 neg labels holdout")
 
-
     if manual_labels:
-        for times_ndsb3 in range(4):  # make ndsb labels count 4 times just like in LIDC when 4 doctors annotated a nodule
+        for times_ndsb3 in range(
+                4):  # make ndsb labels count 4 times just like in LIDC when 4 doctors annotated a nodule
             pos_samples_train += pos_samples_ndsb3_fold
             pos_samples_holdout += pos_samples_ndsb3_holdout
 
@@ -210,7 +219,7 @@ def data_generator(batch_size, record_list, train_set):
         CROP_SIZE = CUBE_SIZE
         # CROP_SIZE = 48
         for record_idx, record_item in enumerate(record_list):
-            #rint patient_dir
+            # rint patient_dir
             class_label = record_item[1]
             size_label = record_item[2]
             if class_label == 0:
@@ -231,7 +240,8 @@ def data_generator(batch_size, record_list, train_set):
                     indent_x = random.randint(0, wiggle)
                     indent_y = random.randint(0, wiggle)
                     indent_z = random.randint(0, wiggle)
-                cube_image = cube_image[indent_z:indent_z + CROP_SIZE, indent_y:indent_y + CROP_SIZE, indent_x:indent_x + CROP_SIZE]
+                cube_image = cube_image[indent_z:indent_z + CROP_SIZE, indent_y:indent_y + CROP_SIZE,
+                             indent_x:indent_x + CROP_SIZE]
 
                 if train_set:
                     if random.randint(0, 100) > 50:
@@ -269,7 +279,8 @@ def data_generator(batch_size, record_list, train_set):
                 indent_x = int(indent_x)
                 indent_y = int(indent_y)
                 indent_z = int(indent_z)
-                cube_image = cube_image[indent_z:indent_z + CROP_SIZE, indent_y:indent_y + CROP_SIZE, indent_x:indent_x + CROP_SIZE]
+                cube_image = cube_image[indent_z:indent_z + CROP_SIZE, indent_y:indent_y + CROP_SIZE,
+                             indent_x:indent_x + CROP_SIZE]
                 if CROP_SIZE != CUBE_SIZE:
                     cube_image = helpers.rescale_patient_images2(cube_image, (CUBE_SIZE, CUBE_SIZE, CUBE_SIZE))
                 assert cube_image.shape == (CUBE_SIZE, CUBE_SIZE, CUBE_SIZE)
@@ -283,7 +294,6 @@ def data_generator(batch_size, record_list, train_set):
                         cube_image = cube_image[:, :, ::-1]
                     if random.randint(0, 100) > 50:
                         cube_image = cube_image[:, ::-1, :]
-
 
             means.append(cube_image.mean())
             img3d = prepare_image_for_net3D(cube_image)
@@ -306,7 +316,8 @@ def data_generator(batch_size, record_list, train_set):
                 batch_idx = 0
 
 
-def get_net(input_shape=(CUBE_SIZE, CUBE_SIZE, CUBE_SIZE, 1), load_weight_path=None, features=False, mal=False) -> Model:
+def get_net(input_shape=(CUBE_SIZE, CUBE_SIZE, CUBE_SIZE, 1), load_weight_path=None, features=False,
+            mal=False) -> Model:
     inputs = Input(shape=input_shape, name="input_1")
     x = inputs
     x = AveragePooling3D(pool_size=(2, 1, 1), strides=(2, 1, 1), border_mode="same")(x)
@@ -328,7 +339,7 @@ def get_net(input_shape=(CUBE_SIZE, CUBE_SIZE, CUBE_SIZE, 1), load_weight_path=N
 
     # 4th layer group
     x = Convolution3D(512, 3, 3, 3, activation='relu', border_mode='same', name='conv4a', subsample=(1, 1, 1))(x)
-    x = Convolution3D(512, 3, 3, 3, activation='relu', border_mode='same', name='conv4b', subsample=(1, 1, 1),)(x)
+    x = Convolution3D(512, 3, 3, 3, activation='relu', border_mode='same', name='conv4b', subsample=(1, 1, 1), )(x)
     x = MaxPooling3D(pool_size=(2, 2, 2), strides=(2, 2, 2), border_mode='valid', name='pool4')(x)
     if USE_DROPOUT:
         x = Dropout(p=0.5)(x)
@@ -343,7 +354,9 @@ def get_net(input_shape=(CUBE_SIZE, CUBE_SIZE, CUBE_SIZE, 1), load_weight_path=N
     model = Model(input=inputs, output=[out_class, out_malignancy])
     if load_weight_path is not None:
         model.load_weights(load_weight_path, by_name=False)
-    model.compile(optimizer=SGD(lr=LEARN_RATE, momentum=0.9, nesterov=True), loss={"out_class": "binary_crossentropy", "out_malignancy": mean_absolute_error}, metrics={"out_class": [binary_accuracy, binary_crossentropy], "out_malignancy": mean_absolute_error})
+    model.compile(optimizer=SGD(lr=LEARN_RATE, momentum=0.9, nesterov=True),
+                  loss={"out_class": "binary_crossentropy", "out_malignancy": mean_absolute_error},
+                  metrics={"out_class": [binary_accuracy, binary_crossentropy], "out_malignancy": mean_absolute_error})
 
     if features:
         model = Model(input=inputs, output=[last64])
@@ -362,7 +375,10 @@ def step_decay(epoch):
 
 def train(model_name, fold_count, train_full_set=False, load_weights_path=None, ndsb3_holdout=0, manual_labels=True):
     batch_size = 16
-    train_files, holdout_files = get_train_holdout_files(train_percentage=80, ndsb3_holdout=ndsb3_holdout, manual_labels=manual_labels, full_luna_set=train_full_set, fold_count=fold_count)
+    # 学習用ファイルと検証用ファイルを取得
+    train_files, holdout_files = get_train_holdout_files(train_percentage=80, ndsb3_holdout=ndsb3_holdout,
+                                                         manual_labels=manual_labels, full_luna_set=train_full_set,
+                                                         fold_count=fold_count)
 
     # train_files = train_files[:100]
     # holdout_files = train_files[:10]
@@ -382,30 +398,40 @@ def train(model_name, fold_count, train_full_set=False, load_weights_path=None, 
     holdout_txt = "_h" + str(ndsb3_holdout) if manual_labels else ""
     if train_full_set:
         holdout_txt = "_fs" + holdout_txt
-    checkpoint = ModelCheckpoint("workdir/model_" + model_name + "_" + holdout_txt + "_e" + "{epoch:02d}-{val_loss:.4f}.hd5", monitor='val_loss', verbose=1, save_best_only=not train_full_set, save_weights_only=False, mode='auto', period=1)
-    checkpoint_fixed_name = ModelCheckpoint("workdir/model_" + model_name + "_" + holdout_txt + "_best.hd5", monitor='val_loss', verbose=1, save_best_only=True, save_weights_only=False, mode='auto', period=1)
-    model.fit_generator(train_gen, len(train_files) / 1, 12, validation_data=holdout_gen, nb_val_samples=len(holdout_files) / 1, callbacks=[checkpoint, checkpoint_fixed_name, learnrate_scheduler])
+    checkpoint = ModelCheckpoint(
+        "workdir/model_" + model_name + "_" + holdout_txt + "_e" + "{epoch:02d}-{val_loss:.4f}.hd5", monitor='val_loss',
+        verbose=1, save_best_only=not train_full_set, save_weights_only=False, mode='auto', period=1)
+    checkpoint_fixed_name = ModelCheckpoint("workdir/model_" + model_name + "_" + holdout_txt + "_best.hd5",
+                                            monitor='val_loss', verbose=1, save_best_only=True, save_weights_only=False,
+                                            mode='auto', period=1)
+    model.fit_generator(train_gen, len(train_files) / 1, 12, validation_data=holdout_gen,
+                        nb_val_samples=len(holdout_files) / 1,
+                        callbacks=[checkpoint, checkpoint_fixed_name, learnrate_scheduler])
     model.save("workdir/model_" + model_name + "_" + holdout_txt + "_end.hd5")
 
 
 if __name__ == "__main__":
     if True:
         # model 1 on luna16 annotations. full set 1 versions for blending
-        train(train_full_set=True, load_weights_path=None, model_name="luna16_full", fold_count=-1, manual_labels=False)
+        train(train_full_set=True, load_weights_path=None, ndsb3_holdout=0, manual_labels=False,
+              model_name="luna16_full", fold_count=-1)
         if not os.path.exists("models/"):
             os.mkdir("models")
         shutil.copy("workdir/model_luna16_full__fs_best.hd5", "models/model_luna16_full__fs_best.hd5")
 
     # model 2 on luna16 annotations + ndsb pos annotations. 3 folds (1st half, 2nd half of ndsb patients) 2 versions for blending
     if True:
-        train(train_full_set=True, load_weights_path=None, ndsb3_holdout=0, manual_labels=True, model_name="luna_posnegndsb_v1", fold_count=2)
-        train(train_full_set=True, load_weights_path=None, ndsb3_holdout=1, manual_labels=True, model_name="luna_posnegndsb_v1", fold_count=2)
+        train(train_full_set=True, load_weights_path=None, ndsb3_holdout=0, manual_labels=True,
+              model_name="luna_posnegndsb_v1", fold_count=2)
+        train(train_full_set=True, load_weights_path=None, ndsb3_holdout=1, manual_labels=True,
+              model_name="luna_posnegndsb_v1", fold_count=2)
         shutil.copy("workdir/model_luna_posnegndsb_v1__fs_h0_end.hd5", "models/model_luna_posnegndsb_v1__fs_h0_end.hd5")
         shutil.copy("workdir/model_luna_posnegndsb_v1__fs_h1_end.hd5", "models/model_luna_posnegndsb_v1__fs_h1_end.hd5")
 
     if True:
-        train(train_full_set=True, load_weights_path=None, ndsb3_holdout=0, manual_labels=True, model_name="luna_posnegndsb_v2", fold_count=2)
-        train(train_full_set=True, load_weights_path=None, ndsb3_holdout=1, manual_labels=True, model_name="luna_posnegndsb_v2", fold_count=2)
+        train(train_full_set=True, load_weights_path=None, ndsb3_holdout=0, manual_labels=True,
+              model_name="luna_posnegndsb_v2", fold_count=2)
+        train(train_full_set=True, load_weights_path=None, ndsb3_holdout=1, manual_labels=True,
+              model_name="luna_posnegndsb_v2", fold_count=2)
         shutil.copy("workdir/model_luna_posnegndsb_v2__fs_h0_end.hd5", "models/model_luna_posnegndsb_v2__fs_h0_end.hd5")
         shutil.copy("workdir/model_luna_posnegndsb_v2__fs_h1_end.hd5", "models/model_luna_posnegndsb_v2__fs_h1_end.hd5")
-
