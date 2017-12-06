@@ -53,7 +53,7 @@ def random_scale_img(img, xy_range, lock_xy=False):
         if scaled_height < org_height:
             extend_top = (org_height - scaled_height) / 2
             extend_bottom = org_height - extend_top - scaled_height
-            scaled_img = cv2.copyMakeBorder(scaled_img, extend_top, extend_bottom, 0, 0,  borderType=cv2.BORDER_CONSTANT)
+            scaled_img = cv2.copyMakeBorder(scaled_img, extend_top, extend_bottom, 0, 0, borderType=cv2.BORDER_CONSTANT)
             scaled_height = org_height
 
         start_x = (scaled_width - org_width) / 2
@@ -75,7 +75,8 @@ class XYRange:
         self.last_y = 0
 
     def get_last_xy_txt(self):
-        res = "x_" + str(int(self.last_x * 100)).replace("-", "m") + "-" + "y_" + str(int(self.last_y * 100)).replace("-", "m")
+        res = "x_" + str(int(self.last_x * 100)).replace("-", "m") + "-" + "y_" + str(int(self.last_y * 100)).replace(
+            "-", "m")
         return res
 
 
@@ -144,7 +145,7 @@ def random_flip_img(img, horizontal_chance=0, vertical_chance=0):
         flip_val = -1 if flip_horizontal else 0
 
     if not isinstance(img, list):
-        res = cv2.flip(img, flip_val) # 0 = X axis, 1 = Y axis,  -1 = both
+        res = cv2.flip(img, flip_val)  # 0 = X axis, 1 = Y axis,  -1 = both
     else:
         res = []
         for img_item in img:
@@ -154,6 +155,8 @@ def random_flip_img(img, horizontal_chance=0, vertical_chance=0):
 
 
 ELASTIC_INDICES = None  # needed to make it faster to fix elastic deformation per epoch.
+
+
 def elastic_transform(image, alpha, sigma, random_state=None):
     global ELASTIC_INDICES
     shape = image.shape
@@ -223,8 +226,7 @@ def dice_coef_loss(y_true, y_pred):
 
 
 class DumpPredictions(Callback):
-
-    def __init__(self, dump_filelist : List[Tuple[str, str]], model_type):
+    def __init__(self, dump_filelist: List[Tuple[str, str]], model_type):
         super(DumpPredictions, self).__init__()
         self.dump_filelist = dump_filelist
         self.batch_count = 0
@@ -370,7 +372,6 @@ def get_unet(learn_rate, load_weights_path=None) -> Model:
     conv8 = Convolution2D(filter_size, 3, 3, activation='relu', border_mode='same')(up8)
     conv8 = Convolution2D(filter_size, 3, 3, activation='relu', border_mode='same')(conv8)
 
-
     up9 = merge([UpSampling2D(size=(2, 2))(conv8), conv2], mode='concat', concat_axis=3)
     up9 = BatchNormalization()(up9)
     conv9 = Convolution2D(filter_size, 3, 3, activation='relu', border_mode='same')(up9)
@@ -392,7 +393,8 @@ def get_unet(learn_rate, load_weights_path=None) -> Model:
 def train_model(holdout, model_type, continue_from=None):
     batch_size = 4
     train_percentage = 80 if model_type == "masses" else 90
-    train_files, holdout_files = get_train_holdout_files( model_type, holdout, train_percentage, frame_count=CHANNEL_COUNT)
+    train_files, holdout_files = get_train_holdout_files(model_type, holdout, train_percentage,
+                                                         frame_count=CHANNEL_COUNT)
     # train_files = train_files[:100]
     # holdout_files = train_files[:10]
 
@@ -416,8 +418,11 @@ def train_model(holdout, model_type, continue_from=None):
         model = get_unet(0.0001)
         model.load_weights(continue_from)
 
-    checkpoint1 = ModelCheckpoint("workdir/" + model_type +"_model_h" + str(holdout) + "_{epoch:02d}-{val_loss:.2f}.hd5", monitor='val_loss', verbose=1, save_best_only=True, save_weights_only=False, mode='auto', period=1)
-    checkpoint2 = ModelCheckpoint("workdir/" + model_type +"_model_h" + str(holdout) + "_best.hd5", monitor='val_loss', verbose=1, save_best_only=True, save_weights_only=False, mode='auto', period=1)
+    checkpoint1 = ModelCheckpoint(
+        "workdir/" + model_type + "_model_h" + str(holdout) + "_{epoch:02d}-{val_loss:.2f}.hd5", monitor='val_loss',
+        verbose=1, save_best_only=True, save_weights_only=False, mode='auto', period=1)
+    checkpoint2 = ModelCheckpoint("workdir/" + model_type + "_model_h" + str(holdout) + "_best.hd5", monitor='val_loss',
+                                  verbose=1, save_best_only=True, save_weights_only=False, mode='auto', period=1)
     files = []
     idx = 0
     while (idx < (len(holdout_files))):
@@ -426,8 +431,11 @@ def train_model(holdout, model_type, continue_from=None):
     dumper = DumpPredictions(holdout_files[::10], model_type)
     epoch_div = 1
     epoch_count = 200 if model_type == "masses" else 50
-    model.fit_generator(train_gen, len(train_files) / epoch_div, epoch_count, validation_data=holdout_gen, nb_val_samples=len(holdout_files) / epoch_div, callbacks=[checkpoint1, checkpoint2, dumper])
-    shutil.copy("workdir/" + model_type +"_model_h" + str(holdout) + "_best.hd5", "models/" + model_type +"_model_h" + str(holdout) + "_best.hd5")
+    model.fit_generator(train_gen, len(train_files) / epoch_div, epoch_count, validation_data=holdout_gen,
+                        nb_val_samples=len(holdout_files) / epoch_div, callbacks=[checkpoint1, checkpoint2, dumper])
+    shutil.copy("workdir/" + model_type + "_model_h" + str(holdout) + "_best.hd5",
+                "models/" + model_type + "_model_h" + str(holdout) + "_best.hd5")
+
 
 def predict_patients(patients_dir, model_path, holdout, patient_predictions, model_type):
     model = get_unet(0.001)
@@ -492,6 +500,7 @@ if __name__ == "__main__":
             patient_predictions_global = []
             for holdout_no in [0, 1, 2]:
                 patient_base_dir = settings.NDSB3_EXTRACTED_IMAGE_DIR
-                predict_patients(patients_dir=patient_base_dir, model_path="models/" + model_type_name + "_model_h" + str(holdout_no) + "_best.hd5", holdout=holdout_no, patient_predictions=patient_predictions_global, model_type=model_type_name)
-
-
+                predict_patients(patients_dir=patient_base_dir,
+                                 model_path="models/" + model_type_name + "_model_h" + str(holdout_no) + "_best.hd5",
+                                 holdout=holdout_no, patient_predictions=patient_predictions_global,
+                                 model_type=model_type_name)
